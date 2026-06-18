@@ -20,15 +20,23 @@ class OptimizeRequest(BaseModel):
     outline: List[Point]
     blocked_zones: List[List[Point]]
     entrance: Point
+    algorithm: str = "v1"
 
 @app.post("/optimize")
 def optimize(request: OptimizeRequest):
     try:
-        result = optimizer.optimize_layout(
-            outline=[(p.x, p.y) for p in request.outline],
-            blocked_zones=[[(p.x, p.y) for p in zone] for zone in request.blocked_zones],
-            entrance=(request.entrance.x, request.entrance.y)
-        )
+        if request.algorithm == "v2":
+            result = optimizer.optimize_layout_v2(
+                outline=[(p.x, p.y) for p in request.outline],
+                blocked_zones=[[(p.x, p.y) for p in zone] for zone in request.blocked_zones],
+                entrance=(request.entrance.x, request.entrance.y)
+            )
+        else:
+            result = optimizer.optimize_layout(
+                outline=[(p.x, p.y) for p in request.outline],
+                blocked_zones=[[(p.x, p.y) for p in zone] for zone in request.blocked_zones],
+                entrance=(request.entrance.x, request.entrance.y)
+            )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
