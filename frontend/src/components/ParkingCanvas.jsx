@@ -11,7 +11,9 @@ export default function ParkingCanvas({
   setMode,
   results,
   tempPoints,
-  setTempPoints
+  setTempPoints,
+  hoveredBlockedZone,
+  setHoveredBlockedZone
 }) {
   const svgRef = useRef(null);
   const [isDraggingEntrance, setIsDraggingEntrance] = useState(false);
@@ -252,24 +254,46 @@ export default function ParkingCanvas({
           </>
           )}
 
-          {/*Render Blocked Zone Polygons */}
-          {blockedZones.map((zone, zIdx) => (
-            <polygon
-              key={zIdx}
-              points={zone.map(p => `${p.x},${p.y}`).join(' ')}
-              className="svg-blocked"
-              style={
-                mode === 'VIEW_RESULTS'
-                  ? { cursor: (draggingZone?.type === 'blocked' && draggingZone?.zoneIndex === zIdx) ? 'grabbing' : 'grab' }
-                  : { pointerEvents: 'none' }
-              }
-              onMouseDown={
-                mode === 'VIEW_RESULTS'
-                  ? (e) => handleZoneMouseDown(e, 'blocked', zIdx)
-                  : undefined
-              }
-            />
-          ))}
+           {/*Render Blocked Zone Polygons */}
+          {blockedZones.map((zone, zIdx) => {
+            const isHovered = hoveredBlockedZone === zIdx;
+            return (
+              <polygon
+                key={zIdx}
+                points={zone.map(p => `${p.x},${p.y}`).join(' ')}
+                className={`svg-blocked ${isHovered ? 'hovered' : ''}`}
+                style={
+                  mode === 'VIEW_RESULTS'
+                    ? { 
+                        cursor: (draggingZone?.type === 'blocked' && draggingZone?.zoneIndex === zIdx) ? 'grabbing' : 'pointer',
+                        fill: isHovered ? 'rgba(239, 68, 68, 0.35)' : 'rgba(239, 68, 68, 0.15)',
+                        stroke: isHovered ? '#EF4444' : 'var(--color-danger)',
+                        strokeWidth: isHovered ? 3 : 2,
+                        transition: 'all 0.15s ease'
+                      }
+                    : { pointerEvents: 'none' }
+                }
+                onMouseDown={
+                  mode === 'VIEW_RESULTS'
+                    ? (e) => handleZoneMouseDown(e, 'blocked', zIdx)
+                    : undefined
+                }
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (mode === 'VIEW_RESULTS') {
+                    setBlockedZones(blockedZones.filter((_, i) => i !== zIdx));
+                    setHoveredBlockedZone(null);
+                    setDraggingZone(null);
+                    setDraggingVertex(null);
+                  }
+                }}
+                onMouseEnter={() => mode === 'VIEW_RESULTS' && setHoveredBlockedZone(zIdx)}
+                onMouseLeave={() => mode === 'VIEW_RESULTS' && setHoveredBlockedZone(null)}
+              >
+                <title>Double-click to delete this blocked zone</title>
+              </polygon>
+            );
+          })}
 
           {/*Render Entrance Marker */}
           {entrance && (

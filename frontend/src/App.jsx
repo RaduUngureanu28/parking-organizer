@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import ParkingCanvas from './components/ParkingCanvas';
 
 export default function App() {
@@ -10,15 +11,14 @@ export default function App() {
   const [tempPoints, setTempPoints] = useState([]);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [algorithm, setAlgorithm] = useState('v1');
+  const [hoveredBlockedZone, setHoveredBlockedZone] = useState(null);
 
   useEffect(() => {
     setResults(null);
   }, [outline, blockedZones, entrance]);
 
   // Handle optimization request
-  const handleOptimize = async (selectedAlgo = algorithm) => {
-    const finalAlgo = typeof selectedAlgo === 'string' ? selectedAlgo : algorithm;
+  const handleOptimize = async () => {
     if (outline.length < 3) {
       alert("Validation Error: Please draw a basement outline first (at least 3 points).");
       return;
@@ -40,7 +40,7 @@ export default function App() {
           outline,
           blocked_zones: blockedZones,
           entrance,
-          algorithm: finalAlgo,
+
         }),
       });
 
@@ -59,13 +59,17 @@ export default function App() {
     }
   };
 
-  const handleAlgoChange = (algo) => {
-    setAlgorithm(algo);
-    if (results && outline.length >= 3 && entrance) {
-      handleOptimize(algo);
+
+
+
+  const handleRemoveBlockedZone = (index) => {
+    setBlockedZones(blockedZones.filter((_, i) => i !== index));
+    if (hoveredBlockedZone === index) {
+      setHoveredBlockedZone(null);
+    } else if (hoveredBlockedZone > index) {
+      setHoveredBlockedZone(hoveredBlockedZone - 1);
     }
   };
-
 
   // Reset the drawing board
   const handleReset = () => {
@@ -75,7 +79,7 @@ export default function App() {
     setTempPoints([]);
     setResults(null);
     setMode('DRAW_OUTLINE');
-    setAlgorithm('v1');
+
   };
 
   const handleUndoLastPoint = () => {
@@ -106,26 +110,7 @@ export default function App() {
         </div>
 
         <div className="sidebar-content">
-          {/* Algorithm Selection */}
-          <div className="algorithm-selection" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <h2 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Optimization Algorithm</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <button 
-                className={`btn btn-secondary ${algorithm === 'v1' ? 'active' : ''}`}
-                style={{ padding: '0.6rem', fontSize: '0.85rem' }}
-                onClick={() => handleAlgoChange('v1')}
-              >
-                Standard (V1)
-              </button>
-              <button 
-                className={`btn btn-secondary ${algorithm === 'v2' ? 'active' : ''}`}
-                style={{ padding: '0.6rem', fontSize: '0.85rem' }}
-                onClick={() => handleAlgoChange('v2')}
-              >
-                Mixed (V2)
-              </button>
-            </div>
-          </div>
+
 
           {/* Mode Controls */}
           <div className="tool-grid">
@@ -169,6 +154,56 @@ export default function App() {
 
 
           </div>
+
+          {/* Blocked Zones List */}
+          {blockedZones.length > 0 && (
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <h2 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                Blocked Zones ({blockedZones.length})
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                {blockedZones.map((zone, idx) => (
+                  <div
+                    key={idx}
+                    onMouseEnter={() => setHoveredBlockedZone(idx)}
+                    onMouseLeave={() => setHoveredBlockedZone(null)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '0.5rem 0.75rem',
+                      background: hoveredBlockedZone === idx ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid',
+                      borderColor: hoveredBlockedZone === idx ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)',
+                      borderRadius: '8px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.85rem', color: hoveredBlockedZone === idx ? '#FFF' : 'var(--text-main)', fontWeight: 500 }}>
+                      Blocked Zone #{idx + 1}
+                    </span>
+                    <button
+                      className="btn"
+                      style={{
+                        padding: '0.3rem',
+                        minWidth: 'auto',
+                        borderRadius: '6px',
+                        background: 'transparent',
+                        borderColor: 'transparent',
+                        color: hoveredBlockedZone === idx ? '#FFF' : 'var(--color-danger)',
+                        margin: 0,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleRemoveBlockedZone(idx)}
+                      title="Delete blocked zone"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Stats Display */}
           {results && results.stats && (
@@ -217,6 +252,8 @@ export default function App() {
           results={results}
           tempPoints={tempPoints}
           setTempPoints={setTempPoints}
+          hoveredBlockedZone={hoveredBlockedZone}
+          setHoveredBlockedZone={setHoveredBlockedZone}
         />
       </main>
     </div>
