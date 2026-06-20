@@ -31,7 +31,7 @@ export default function App() {
     }
     setLoading(true);
     try {
-      const response = await fetch('parking-organizer-production.up.railway.app/optimize', {
+      const response = await fetch('https://parking-organizer-production.up.railway.app/optimize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
