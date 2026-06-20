@@ -201,7 +201,14 @@ export default function ParkingCanvas({
        setMode('VIEW_RESULTS');
     }
   }
-    return (
+
+  const filteredSpots = results?.spots
+    ? results.spots.filter(
+        spot => !blockedZones.some(zone => arePolygonsIntersecting(spot, zone))
+      )
+    : [];
+
+  return (
       <div className="canvas-container">
         <svg
           ref={svgRef}
@@ -253,6 +260,51 @@ export default function ParkingCanvas({
             ))}
           </>
           )}
+
+          {/* Render Generated Roads (unfiltered) */}
+          {results?.roads && results.roads.map((road, rIdx) => (
+            <polygon
+              key={`road-${rIdx}`}
+              points={road.map(p => `${p.x},${p.y}`).join(' ')}
+              className="svg-road"
+            />
+          ))}
+
+          {/* Blocked Zone Background Masks (to visually clip/cover roads underneath) */}
+          {blockedZones.map((zone, zIdx) => (
+            <polygon
+              key={`road-mask-${zIdx}`}
+              points={zone.map(p => `${p.x},${p.y}`).join(' ')}
+              fill="#0d1220"
+              stroke="none"
+              style={{ pointerEvents: 'none' }}
+            />
+          ))}
+
+          {/* Render Generated Parking Spots (filtered to completely hide overlapping ones) */}
+          {filteredSpots.map((spot, sIdx) => {
+            const xs = spot.map(p => p.x);
+            const ys = spot.map(p => p.y);
+            const cx = xs.reduce((a, b) => a + b, 0) / spot.length;
+            const cy = ys.reduce((a, b) => a + b, 0) / spot.length;
+
+            return (
+              <g key={`spot-${sIdx}`}>
+                <polygon
+                  points={spot.map(p => `${p.x},${p.y}`).join(' ')}
+                  className="svg-spot"
+                />
+                <text
+                  x={cx}
+                  y={cy}
+                  className="svg-spot-text"
+                  dominantBaseline="central"
+                >
+                  {sIdx + 1}
+                </text>
+              </g>
+            );
+          })}
 
            {/*Render Blocked Zone Polygons */}
           {blockedZones.map((zone, zIdx) => {
@@ -466,43 +518,51 @@ export default function ParkingCanvas({
           })()}
 
 
-          {/* Render Generated Roads */}
-          {results?.roads && results.roads.map((road, rIdx) => (
-            <polygon
-              key={`road-${rIdx}`}
-              points={road.map(p => `${p.x},${p.y}`).join(' ')}
-              className="svg-road"
-            />
-          ))}
-
-          {/* Render Generated Parking Spots */}
-          {results?.spots && results.spots.map((spot, sIdx) => {
-            // Calculate center point of the spot to overlay the text number label
-            const xs = spot.map(p => p.x);
-            const ys = spot.map(p => p.y);
-            const cx = xs.reduce((a, b) => a + b, 0) / spot.length;
-            const cy = ys.reduce((a, b) => a + b, 0) / spot.length;
-
-            return (
-              <g key={`spot-${sIdx}`}>
-                <polygon
-                  points={spot.map(p => `${p.x},${p.y}`).join(' ')}
-                  className="svg-spot"
-                />
-                <text
-                  x={cx}
-                  y={cy}
-                  className="svg-spot-text"
-                  dominantBaseline="central"
-                >
-                  {sIdx + 1}
-                </text>
-              </g>
-            );
-          })}
-
         </svg>
       </div>
     );
+  }
+
+  // Helper functions for 2D polygon intersection
+  function isPointInPolygon(pt, poly) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i].x, yi = poly[i].y;
+      const xj = poly[j].x, yj = poly[j].y;
+      
+      const intersect = ((yi > pt.y) !== (yj > pt.y))
+          && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function doSegmentsIntersect(p1, q1, p2, q2) {
+    function ccw(A, B, C) {
+      return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x);
+    }
+    return (ccw(p1, p2, q2) !== ccw(q1, p2, q2)) && (ccw(p1, q1, p2) !== ccw(p1, q1, q2));
+  }
+
+  function arePolygonsIntersecting(polyA, polyB) {
+    // 1. Check if any vertex of polyA is inside polyB
+    for (const pt of polyA) {
+      if (isPointInPolygon(pt, polyB)) return true;
+    }
+    // 2. Check if any vertex of polyB is inside polyA
+    for (const pt of polyB) {
+      if (isPointInPolygon(pt, polyA)) return true;
+    }
+    // 3. Check if any segment of polyA intersects any segment of polyB
+    for (let i = 0; i < polyA.length; i++) {
+      const a1 = polyA[i];
+      const a2 = polyA[(i + 1) % polyA.length];
+      for (let j = 0; j < polyB.length; j++) {
+        const b1 = polyB[j];
+        const b2 = polyB[(j + 1) % polyB.length];
+        if (doSegmentsIntersect(a1, a2, b1, b2)) return true;
+      }
+    }
+    return false;
   }
 
