@@ -624,21 +624,23 @@ def optimize_margin_layout(outline_poly, blocked_m, entrance_pt):
     }
 
 
-def optimize_layout2(outline, blocked_zones, entrance):
+def optimize_layout(outline, blocked_zones, entrance):
     # convert input px to meters
     outline_m = [(p[0] / PX_TO_M_SCALE, p[1] / PX_TO_M_SCALE) for p in outline]
     blocked_m = [[(p[0] / PX_TO_M_SCALE, p[1] / PX_TO_M_SCALE) for p in zone] for zone in blocked_zones]
     entrance_m = (entrance[0] / PX_TO_M_SCALE, entrance[1] / PX_TO_M_SCALE)
 
     if len(outline_m) < MIN_POLYGON_VERTICES:
-        return empty_results()
+        return {"error": "Outline must have at least 3 vertices."}
     
     try:
         outline_poly = shapely.Polygon(outline_m)
         if not outline_poly.is_valid:
             outline_poly = outline_poly.buffer(0)
+        if outline_poly.is_empty:
+            return {"error": "Invalid self-intersecting or empty outline polygon. Please adjust the outline shape."}
     except Exception as e:
-        return empty_results()
+        return {"error": f"Failed to construct outline polygon: {str(e)}"}
         
     entrance_pt = shapely.Point(entrance_m)
 

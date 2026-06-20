@@ -49,6 +49,10 @@ export default function App() {
       }
 
       const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
       setResults(data);
       setMode('VIEW_RESULTS');
     } catch (error) {
@@ -116,29 +120,33 @@ export default function App() {
           <div className="tool-grid">
             <button 
               className={`btn btn-secondary ${mode === 'DRAW_OUTLINE' ? 'active' : ''}`}
+              disabled={loading}
               onClick={() => {
                 setTempPoints([]);
                 setMode('DRAW_OUTLINE');
+                setResults(null);
               }}
             >
               Draw Outline
             </button>
             <button 
               className={`btn btn-secondary ${mode === 'DRAW_BLOCKED' ? 'active' : ''}`}
-              disabled={outline.length < 3}
+              disabled={loading || outline.length < 3}
               onClick={() => {
                 setTempPoints([]);
                 setMode('DRAW_BLOCKED');
+                setResults(null);
               }}
             >
               Draw Blocked Zone
             </button>
             <button 
               className={`btn btn-secondary ${mode === 'PLACE_ENTRANCE' ? 'active' : ''}`}
-              disabled={outline.length < 3}
+              disabled={loading || outline.length < 3}
               onClick={() => {
                 setTempPoints([]);
                 setMode('PLACE_ENTRANCE');
+                setResults(null);
               }}
             >
               Set Entrance
@@ -146,13 +154,65 @@ export default function App() {
 
             <button 
               className="btn btn-secondary"
-              disabled={tempPoints.length === 0 && blockedZones.length === 0 && outline.length === 0}
+              disabled={loading || (tempPoints.length === 0 && blockedZones.length === 0 && outline.length === 0)}
               onClick={handleUndoLastPoint} 
             >
               Undo Last Point
             </button>
+          </div>
 
-
+          {/* Setup Steps */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            marginTop: '0.5rem'
+          }}>
+            <h2 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
+              Setup Steps
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ 
+                  color: 'var(--color-primary)',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem' 
+                }}>
+                  1.
+                </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                  Draw outline bounds
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ 
+                  color: 'var(--color-primary)',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem' 
+                }}>
+                  2.
+                </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                  Place snap entrance
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ 
+                  color: 'var(--color-primary)',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem' 
+                }}>
+                  3.
+                </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                  Draw blocked zones (Optional)
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Blocked Zones List */}
@@ -228,13 +288,18 @@ export default function App() {
           )}
 
           <div style={{ marginTop: '2rem' }}>
-            <button className="btn btn-danger" onClick={handleReset}>Reset</button>
+            <button className="btn btn-danger" onClick={handleReset} disabled={loading}>Reset</button>
           </div>
         </div>
 
         <div className="sidebar-footer">
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleOptimize}>
-            Generate Layout
+          <button 
+            className="btn btn-primary" 
+            style={{ width: '100%' }} 
+            onClick={handleOptimize}
+            disabled={loading}
+          >
+            {loading ? 'Generating Layout...' : 'Generate Layout'}
           </button>
         </div>
       </aside>

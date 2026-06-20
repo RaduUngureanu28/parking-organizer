@@ -269,9 +269,9 @@ button.btn-danger:hover {
 }
 
 .svg-road {
-  fill: rgba(255, 255, 255, 0.08);
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 0.0;
+  fill: #202532;
+  stroke: #202532;
+  stroke-width: 0.5;
 }
 
 .svg-road-centerline {

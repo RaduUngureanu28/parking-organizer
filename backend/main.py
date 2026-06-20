@@ -24,8 +24,7 @@ class OptimizeRequest(BaseModel):
 @app.post("/optimize")
 def optimize(request: OptimizeRequest):
     try:
-        # Temporarily call optimize_layout2 to test margins
-        result = optimizer.optimize_layout2(
+        result = optimizer.optimize_layout(
             outline=[(p.x, p.y) for p in request.outline],
             blocked_zones=[[(p.x, p.y) for p in zone] for zone in request.blocked_zones],
             entrance=(request.entrance.x, request.entrance.y)
