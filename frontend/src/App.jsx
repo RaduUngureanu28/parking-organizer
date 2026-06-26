@@ -63,9 +63,6 @@ export default function App() {
     }
   };
 
-
-
-
   const handleRemoveBlockedZone = (index) => {
     setBlockedZones(blockedZones.filter((_, i) => i !== index));
     if (hoveredBlockedZone === index) {
@@ -75,7 +72,6 @@ export default function App() {
     }
   };
 
-  // Reset the drawing board
   const handleReset = () => {
     setOutline([]);
     setBlockedZones([]);
